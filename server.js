@@ -40,7 +40,7 @@ app.get('/api/capivaras', (req, res) => {
 app.post('/api/capivaras', (req, res) => {
   const { nome, idade, peso, statusSaude, habitat, comportamento, dieta, observacoes } = req.body;
   
-  if (!nome || !idade || !peso || !statusSaude || !habitat) {
+  if ( nome == undefined || idade == undefined || peso == undefined || statusSaude == undefined || habitat == undefined) {
     res.status(400).json({ error: 'Campos obrigatorios nao informados' });
     return;
   }
@@ -108,12 +108,31 @@ const initialData = [
     { nome: 'Darius III', idade: 6, peso: 72, statusSaude: 'Saudável', habitat: 'Lago Sul', comportamento: 'Grande e dominante, tende a liderar o grupo nas interações sociais.', dieta: 'Prefere pasto grosso e casca de árvore.', observacoes: 'Mostra comportamento protetor, especialmente quando está perto de Senhorita Bigodes.' }
   ];
   
-  initialData.forEach(data => {
-    dbConnection.run('INSERT INTO capivaras (nome, idade, peso, status_saude, habitat, comportamento, dieta, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      data.nome, data.idade, data.peso, data.statusSaude, data.habitat, data.comportamento, data.dieta, data.observacoes, function(err) {
-        if (err) {
-          console.error('Erro ao inserir dados:', err);
-        }
+  dbConnection.get('SELECT COUNT(*) AS count FROM capivaras', (err, row) => {
+    if (err) {
+      console.error('Erro ao verificar a tabela:', err);
+      return;
+    }
+  
+    // Se a contagem for 0, significa que a tabela está vazia
+    if (row.count === 0) {
+      console.log('Tabela está vazia, inserindo dados...');
+  
+      initialData.forEach(data => {
+        dbConnection.run(
+          'INSERT INTO capivaras (nome, idade, peso, status_saude, habitat, comportamento, dieta, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [data.nome, data.idade, data.peso, data.statusSaude, data.habitat, data.comportamento, data.dieta, data.observacoes],
+          function (err) {
+            if (err) {
+              console.error('Erro ao inserir dados:', err);
+            } else {
+              console.log(`Capivara "${data.nome}" inserida com sucesso.`);
+            }
+          }
+        );
       });
+    } else {
+      console.log('A tabela já contém dados, não foi necessário inserir.');
+    }
   });
   
